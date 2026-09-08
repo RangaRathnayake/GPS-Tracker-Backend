@@ -1,0 +1,12 @@
+services:
+  gps-tracker:
+    build:
+      context: .
+    image: gps-tracker-backend:local
+    container_name: gps-tracker-backend
+    restart: unless-stopped
+    environment:
+      PORT: "5013"
+      HOST: "0.0.0.0"
+    ports:
+      - "5013:5013/tcp"

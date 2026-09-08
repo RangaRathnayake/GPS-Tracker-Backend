@@ -1,0 +1,13 @@
+{
+  "name": "gps-tracker-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal TCP logger for SinoTrack ST-901 / H02 packets",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
