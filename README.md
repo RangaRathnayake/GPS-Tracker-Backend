@@ -37,12 +37,12 @@ docker compose down
 GitHub Container Registry image එක server එකට pull කර සෘජුව run කිරීමට (image name එක repository එකේ Packages/Actions වලින් ලබාගන්න):
 
 ```bash
-docker pull ghcr.io/GITHUB_USERNAME/gps-tracker-backend:latest
+docker pull ghcr.io/rangarathnayake/gps-tracker-backend:latest
 docker run -d \
   --name gps-tracker-backend \
   --restart unless-stopped \
   -p 5013:5013/tcp \
-  ghcr.io/GITHUB_USERNAME/gps-tracker-backend:latest
+  ghcr.io/rangarathnayake/gps-tracker-backend:latest
 ```
 
 Logs බැලීමට:
