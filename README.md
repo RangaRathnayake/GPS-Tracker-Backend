@@ -18,6 +18,8 @@ GPS TCP logger listening on 0.0.0.0:5013
 Waiting for SinoTrack / H02 packets...
 ```
 
+Logger එක packet එකකට වෙනම separator block එකක් පෙන්වයි. සෑම block එකකම UTC receipt time සහ `Asia/Colombo` server time දෙකම, connection/client, byte size, HEX, raw H02 packet සහ basic parsed fields ඇතුළත් වේ. වෙනත් timezone එකක් අවශ්‍ය නම් `SERVER_TIMEZONE` environment variable එක IANA timezone name එකකට සකස් කරන්න.
+
 ## Docker භාවිතයෙන් ආරම්භ කිරීම
 
 Source code එක තිබෙන machine එකේ:

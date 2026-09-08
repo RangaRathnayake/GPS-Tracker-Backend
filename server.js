@@ -4,15 +4,43 @@ const net = require('node:net');
 
 const PORT = Number.parseInt(process.env.PORT || '5013', 10);
 const HOST = process.env.HOST || '0.0.0.0';
+const SERVER_TIMEZONE = process.env.SERVER_TIMEZONE || 'Asia/Colombo';
+const SECTION_LINE = '='.repeat(88);
+const SUBSECTION_LINE = '-'.repeat(88);
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error(`Invalid PORT: ${process.env.PORT}`);
 }
 
 let connectionNumber = 0;
+let packetNumber = 0;
 
-function timestamp() {
-  return new Date().toISOString();
+function timeDetails(date = new Date()) {
+  return {
+    utc: date.toISOString(),
+    server: new Intl.DateTimeFormat('en-CA', {
+      timeZone: SERVER_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3,
+      hourCycle: 'h23',
+      timeZoneName: 'shortOffset'
+    }).format(date)
+  };
+}
+
+function eventLog(event, details) {
+  const time = timeDetails();
+  console.log(`\n${SUBSECTION_LINE}`);
+  console.log(`EVENT       : ${event}`);
+  console.log(`SERVER TIME : ${time.server} (${SERVER_TIMEZONE})`);
+  console.log(`UTC TIME    : ${time.utc}`);
+  console.log(details);
+  console.log(SUBSECTION_LINE);
 }
 
 function parseH02(message) {
@@ -33,11 +61,12 @@ const server = net.createServer((socket) => {
   let textBuffer = '';
 
   socket.setKeepAlive(true, 30_000);
-  console.log(`\n[${timestamp()}] CONNECT #${id} ${client}`);
+  eventLog('TRACKER CONNECTED', `CONNECTION  : #${id}\nCLIENT      : ${client}`);
 
   socket.on('data', (chunk) => {
-    console.log(`[${timestamp()}] DATA #${id} ${chunk.length} bytes`);
-    console.log(`HEX: ${chunk.toString('hex')}`);
+    const receivedAt = new Date();
+    const receivedTime = timeDetails(receivedAt);
+    const chunkHex = chunk.toString('hex');
 
     textBuffer += chunk.toString('utf8');
 
@@ -49,42 +78,62 @@ const server = net.createServer((socket) => {
       textBuffer = textBuffer.slice(endIndex + 1);
       if (!frame) continue;
 
-      console.log(`RAW: ${frame}`);
+      const currentPacket = ++packetNumber;
       const parsed = parseH02(frame);
+
+      console.log(`\n${SECTION_LINE}`);
+      console.log(`GPS PACKET  : #${currentPacket}`);
+      console.log(`CONNECTION  : #${id}`);
+      console.log(`CLIENT      : ${client}`);
+      console.log(`SERVER TIME : ${receivedTime.server} (${SERVER_TIMEZONE})`);
+      console.log(`UTC TIME    : ${receivedTime.utc}`);
+      console.log(`CHUNK SIZE  : ${chunk.length} bytes`);
+      console.log(SUBSECTION_LINE);
+      console.log('HEX');
+      console.log(chunkHex);
+      console.log(SUBSECTION_LINE);
+      console.log('RAW H02 PACKET');
+      console.log(frame);
+
       if (parsed) {
-        console.log('BASIC:', JSON.stringify(parsed, null, 2));
+        console.log(SUBSECTION_LINE);
+        console.log('BASIC PARSED DATA');
+        console.log(JSON.stringify(parsed, null, 2));
       }
+      console.log(`${SECTION_LINE}\n`);
     }
 
     // Prevent an invalid/non-text client from growing memory indefinitely.
     if (textBuffer.length > 64 * 1024) {
-      console.warn(`[${timestamp()}] Buffer cleared: no H02 frame terminator found`);
+      eventLog('BUFFER CLEARED', 'No H02 frame terminator was found within 64 KiB.');
       textBuffer = '';
     }
   });
 
   socket.on('end', () => {
     if (textBuffer.trim()) console.log(`UNFINISHED: ${JSON.stringify(textBuffer)}`);
-    console.log(`[${timestamp()}] END #${id} ${client}`);
+    eventLog('TRACKER ENDED CONNECTION', `CONNECTION  : #${id}\nCLIENT      : ${client}`);
   });
 
   socket.on('close', () => {
-    console.log(`[${timestamp()}] CLOSE #${id} ${client}`);
+    eventLog('TRACKER CONNECTION CLOSED', `CONNECTION  : #${id}\nCLIENT      : ${client}`);
   });
 
   socket.on('error', (error) => {
-    console.error(`[${timestamp()}] SOCKET ERROR #${id}:`, error.message);
+    eventLog('SOCKET ERROR', `CONNECTION  : #${id}\nCLIENT      : ${client}\nERROR       : ${error.message}`);
   });
 });
 
 server.on('error', (error) => {
-  console.error(`[${timestamp()}] SERVER ERROR:`, error);
+  eventLog('SERVER ERROR', `ERROR       : ${error.stack || error.message}`);
   process.exitCode = 1;
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`GPS TCP logger listening on ${HOST}:${PORT}`);
-  console.log('Waiting for SinoTrack / H02 packets...');
+  eventLog(
+    'GPS TCP LOGGER STARTED',
+    `LISTENING   : ${HOST}:${PORT}\nTIMEZONE    : ${SERVER_TIMEZONE}\nSTATUS      : Waiting for SinoTrack / H02 packets...`
+  );
 });
 
 function shutdown(signal) {

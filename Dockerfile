@@ -8,6 +8,7 @@ USER node
 
 ENV HOST=0.0.0.0 \
     PORT=5013 \
+    SERVER_TIMEZONE=Asia/Colombo \
     NODE_ENV=production
 
 EXPOSE 5013/tcp

@@ -8,5 +8,6 @@ services:
     environment:
       PORT: "5013"
       HOST: "0.0.0.0"
+      SERVER_TIMEZONE: "Asia/Colombo"
     ports:
       - "5013:5013/tcp"
